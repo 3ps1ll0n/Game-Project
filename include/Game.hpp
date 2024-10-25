@@ -1,13 +1,22 @@
+#pragma once
+
 #include <SDL.h>
+#include "Camera.hpp"
+#include "Log.hpp"
+#include "ECS.hpp"
 
 class Game
 {
 private:
     SDL_Window* window;
-    SDL_Renderer* renderer;
+
+    int windowWidth, windowHeight;
 
     bool running;
 
+    Manager* entityManager;
+    Entity* player;
+    Camera* cam;
 public:
     Game(/* args */);
     ~Game();
@@ -18,5 +27,9 @@ public:
     void render();
     void clear();
     bool isRunning(){return running;};
+
+    static SDL_Renderer* renderer;
+    static bool debugMode;
+    static Entity* tileMap;
 };
 

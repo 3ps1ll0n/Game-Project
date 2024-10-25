@@ -1,7 +1,9 @@
 bin/
+log/
 include/SDL2/
 assets/
 lib/
 include/json/
 src/jsoncpp/
 *.md
+.vscode/settings.json
