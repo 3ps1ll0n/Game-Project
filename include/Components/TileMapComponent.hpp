@@ -141,7 +141,7 @@ public:
         Json::Value root;
         roomFile >> root;
 
-        copyRoomToMap(getRoomFromJson(root), (size/2 - root["layers"][0]["height"].asInt()/2), (size/2 - root["layers"][0]["width"].asInt()/2), doorsToGenerate);
+        copyRoomToMap(getRoomFromJson(root), (size/2 - root["layers"][0]["width"].asInt()/2), (size/2 - root["layers"][0]["height"].asInt()/2), doorsToGenerate);
 
         std::vector<std::string> allFiles = {};
 
@@ -205,17 +205,18 @@ public:
                     int removeWidth = currentDoor->facing == WEST ? 1 : 0; //Determine if we should offset more on X
                     int removeHeight = currentDoor->facing == NORTH ? 1 : 0; //Same with Y
 
-                    int xPos = currentDoor->x - currentRoomDoors[i].x - (removeWidth * room.size()); //X position of the top left corner of the room
-                    int yPos = currentDoor->y - currentRoomDoors[i].y; - (removeHeight * room[0].size()); //Y position of the top left corner
+                    int xPos = currentDoor->x - currentRoomDoors[i].x; //X position of the top left corner of the room //(room[0].size() - currentRoomDoors[i].x);
+                    int yPos = currentDoor->y - currentRoomDoors[i].y; //Y position of the top left corner //(room.size() - currentRoomDoors[i].y)
 
                     if(checkIfItsClear(room, xPos, yPos)) { //If room has place to generate...
                         copyRoomToMap(room, xPos, yPos, doorsToGenerate); //Copy it to the tileMap
                         roomHasBeenAdded = true;
+                        break;
                     } //Else, retry
                 }
             }
             clearUsedDoor(doorsToGenerate);
-        }
+        } 
         return 0;
     }
 
@@ -225,7 +226,7 @@ public:
         {
             for(int j = 0; j < room[i].size(); j++)
             {
-                if(room[i][j].id != 0)tileMap[i + xOffset][j + yOffset] = room[i][j];
+                if(room[i][j].id != 0)tileMap[i + yOffset][j + xOffset] = room[i][j];
             }
         }
         getDoors(room, doors, xOffset, yOffset);
@@ -279,7 +280,7 @@ public:
             {
                 if(room[i][j].id == 4) 
                 {
-                    allDoors.push_back({i + yOffset, j + xOffset, UNDEFINED});
+                    allDoors.push_back({j + xOffset, i + yOffset, UNDEFINED});
                     if( i-1 < 0 || room[i-1][j].id == 0) allDoors[allDoors.size() - 1].facing = NORTH;
                     else if(i+1 >= room.size() || room[i+1][j].id == 0) allDoors[allDoors.size() - 1].facing = SOUTH;
                     else if(j-1 < 0 || room[i][j-1].id == 0) allDoors[allDoors.size() - 1].facing = WEST;

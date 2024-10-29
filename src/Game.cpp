@@ -40,13 +40,13 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height)
         player->addComponent<StatsComponent>();
         
         auto& pHB = player->addComponent<HitBoxComponent>();
-        pHB.addHitBoxType(BODY);
-        pHB.addHitBox(BODY, new HitBox(0, 0, 64, 64));
+        pHB.addHitBoxType(BODY); //Add a kind of hitbox in the player
+        pHB.addHitBox(BODY, new HitBox(0, 0, 60, 60));
 
 
         tileMap = &entityManager->addEntity();
         auto& tmc = tileMap->addComponent<TileMapComponent>();
-        tmc.Generate(500, 15);
+        tmc.Generate(500, 50);
 
         player->getComponent<PositionComponent>().setPos(tmc.getSize()/2 * tmc.getTileSize(), tmc.getSize()/2 * tmc.getTileSize());
 
