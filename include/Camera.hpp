@@ -21,4 +21,11 @@ public:
 
     int getX() {return x;}
     int getY() {return y;}
+    int getW() {return w;}
+    int getH() {return h;}
+    void setSize(int w, int h)
+    {
+        this->w = w;
+        this->h = h;
+    }
 };

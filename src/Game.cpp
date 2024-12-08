@@ -32,12 +32,22 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height)
         player = new Entity();
         entityManager = new Manager();
         cam = new Camera();
+        cam->setSize(width, height);
         running = true;
 
         player->addComponent<MouvementComponent>();
         player->addComponent<PositionComponent>();
         player->addComponent<SpriteRendererComponent>().setSprite("assets/chevalier_002.png");
         player->addComponent<StatsComponent>();
+        player->addComponent<AnimatorComponent>().addSpriteSheet("assets/CharAni-Sheet4.png", 
+        {"Idle", "Walk"},
+        8,
+        0.100,
+        32,
+        32
+        );
+
+        player->getComponent<AnimatorComponent>().setCurrentSpriteSheet("Idle");
         
         auto& pHB = player->addComponent<HitBoxComponent>();
         pHB.addHitBoxType(BODY); //Add a kind of hitbox in the player
@@ -78,18 +88,28 @@ void Game::eventHandler()
         }
     }
 
+    double speed = player->getComponent<StatsComponent>().getSpeed();
+
     if(keyboard[SDL_SCANCODE_D]){
-        player->getComponent<MouvementComponent>().setXVelocity(100);
+        player->getComponent<MouvementComponent>().setXVelocity(speed);
     }   
     else if(keyboard[SDL_SCANCODE_A]){
-        player->getComponent<MouvementComponent>().setXVelocity(-100);
+        player->getComponent<MouvementComponent>().setXVelocity(-speed);
+    } else {
+        player->getComponent<MouvementComponent>().setXVelocity(0.0);
     }
 
     if(keyboard[SDL_SCANCODE_W]){
-        player->getComponent<MouvementComponent>().setYVelocity(-100);
+        player->getComponent<MouvementComponent>().setYVelocity(-speed);
     }
     else if(keyboard[SDL_SCANCODE_S]){
-        player->getComponent<MouvementComponent>().setYVelocity(100);
+        player->getComponent<MouvementComponent>().setYVelocity(speed);
+    } else {
+        player->getComponent<MouvementComponent>().setYVelocity(0.0);
+    }
+
+    if(keyboard[SDL_SCANCODE_SPACE]){
+        player->getComponent<MouvementComponent>().dash();
     }
     
 }
@@ -100,7 +120,7 @@ void Game::update(double dt)
     player->update(dt);
     cam->setPos(player->getComponent<PositionComponent>().getX() - (windowWidth/2), player->getComponent<PositionComponent>().getY() - (windowHeight/2));
     entityManager->update(dt);
-    player->getComponent<MouvementComponent>().resetVelocity();
+    //player->getComponent<MouvementComponent>().resetVelocity();
     //playSound();
 }
 

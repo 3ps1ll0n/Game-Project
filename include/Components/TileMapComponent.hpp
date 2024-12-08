@@ -11,6 +11,8 @@
 #include <string>
 #include <iostream>
 #include <json/json.h>
+#include <algorithm>
+#include <iterator>
 
 std::string path("assets/TileMap/");
 
@@ -25,7 +27,7 @@ struct Tile
 
 enum Direction
 {
-    UNDEFINED,
+    UNDEFINED = 0,
     NORTH = 1,
     SOUTH = -1,
     EAST = 2,
@@ -77,17 +79,18 @@ public:
     void render(Camera* cam)
     {
         SDL_Rect dstRect = {0, 0, tileSize, tileSize};
-        for(int i = 0; i < tileMap.size(); i++)
+        for(int i = cam->getY() / tileSize; i < (cam->getY() + cam->getH()) / tileSize; i++)
         {
             dstRect.y = (i * tileSize) - cam->getY();
-            for(int j = 0; j < tileMap[i].size(); j++)
+            for(int j = cam->getX() / tileSize; j < (cam->getX() + cam->getW()) / tileSize + 1; j++)
             {
                 auto tile = &tileMap[i][j];
                 dstRect.x = (j * tileSize) - cam->getX();
 
-                if(tile->id == 4) SDL_SetRenderDrawColor(Game::renderer, 255, 0, 0 ,0);
+                if(tile->id == 4) SDL_SetRenderDrawColor(Game::renderer, 255, 0, 0 ,255);
                 else if (tile->id == 2) SDL_SetRenderDrawColor(Game::renderer, 210, 180, 140, 255);
                 else if (tile->id == 1) SDL_SetRenderDrawColor(Game::renderer, 210, 180, 0, 255);
+                else if (tile->id == 5) SDL_SetRenderDrawColor(Game::renderer, 0, 0, 255, 255);
                 else SDL_SetRenderDrawColor(Game::renderer, 0, 0, 0, 0);
                 if(tile->id != 0) SDL_RenderFillRect(Game::renderer, &dstRect);
             }
@@ -150,20 +153,41 @@ public:
             allFiles.push_back(path + entry.path().string().substr(path.find_last_of("/\\") + 1));
             Log::writeLog("debugLog.txt", allFiles[allFiles.size() - 1] + " - Initialized");
         }
+
+        /*TileMap room;
+            std::string roomPath = allFiles[2];
+            roomFile = std::ifstream(roomPath, std::ifstream::binary);
+            roomFile >> root;
+            //Json::Value to TileMap
+            room = getRoomFromJson(root);
+
+        for(int i = 0; i < 4; i ++)
+        {
+            room = rotateRoom(room);
+            copyRoomToMap(room, (size/2 - root["layers"][0]["width"].asInt()/2) + 25 * (i + 1), (size/2 - root["layers"][0]["height"].asInt()/2), doorsToGenerate);
+        }*/
         
         for(int i = 1; i < nbreRoom; i++)
         {
             TileMap room;
             //Get a random room
-            do{
-                std::string roomPath = allFiles[std::rand() % allFiles.size()];
-                roomFile = std::ifstream(roomPath, std::ifstream::binary);
-                roomFile >> root;
-                //Json::Value to TileMap
-                room = getRoomFromJson(root);
-                addRoomToDungeon(room, doorsToGenerate);
-            } while(false /*addRoomToDungeon(room, doorsToGenerate) == 1*/);
+
+            std::string roomPath = allFiles[std::rand() % allFiles.size()];
+            roomFile = std::ifstream(roomPath, std::ifstream::binary);
+            roomFile >> root;
+            //Json::Value to TileMap
+            room = getRoomFromJson(root);
+            if(addRoomToDungeon(room, doorsToGenerate) == 1 && Game::debugMode) 
+            {
+                for(int j = 0; j < doorsToGenerate.size(); j++)
+                    tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].id = 0;
+                Log::writeLog("debugLog.txt", "ERROR WHILE GENERATING DUNGEON, INTERUPTION IN MID PROCESS");
+                return;
+            }
+            Log::writeLog("debugLog.txt", roomPath + " - " + std::to_string(i) + "/" + std::to_string(nbreRoom) + " Generated");
         }
+        for(int j = 0; j < doorsToGenerate.size(); j++) //Clear unused Doors
+           tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].id = 1;
 
         resizeAllDoors();
     }
@@ -180,7 +204,7 @@ public:
             for(int j = 0; j < w; j++)
             {
                 room[i][j].id = map[j + (i*w)].asInt();
-                if(room[i][j].id == 1) room[i][j].canCollide = true;
+                if(room[i][j].id == 1 || room[i][j].id == 5) room[i][j].canCollide = true;
             }
         }
 
@@ -189,30 +213,44 @@ public:
 
     int addRoomToDungeon(TileMap room, std::vector<Door>& doorsToGenerate)
     {
+        std::vector<Door> ddd = {};
+        std::copy(doorsToGenerate.begin(), doorsToGenerate.end(), std::back_inserter(ddd));
         bool roomHasBeenAdded = false;
         while(!roomHasBeenAdded){
-            std::unique_ptr<Door> currentDoor = std::make_unique<Door>(doorsToGenerate[ std::rand() % doorsToGenerate.size()]);
+            if(ddd.size() <= 0) return 1; // check if they are still some door availlable
+
+            int rDoor = std::rand() % ddd.size(); 
+
+            std::unique_ptr<Door> currentDoor = std::make_unique<Door>(ddd[ rDoor ]); //select a random door...
+            ddd.erase(ddd.begin() + rDoor); //and erase it
+
             std::vector<Door> currentRoomDoors = {};
 
             room = randomlyRotateRoom(room);
-            getDoors(room, currentRoomDoors); 
-            
-            for(int i = 0; i < currentRoomDoors.size(); i++)
+
+            for(int k = 0; k < 4 && !roomHasBeenAdded; k++) //To test every possible rotattion
             {
-                if(currentDoor->facing == -currentRoomDoors[i].facing) 
+                room = rotateRoom(room);
+                currentRoomDoors.clear();
+                getDoors(room, currentRoomDoors); 
+                for(int i = 0; i < currentRoomDoors.size() && !roomHasBeenAdded; i++)
                 {
-                    //if(abs(currentDoor->facing) == 1)
-                    int removeWidth = currentDoor->facing == WEST ? 1 : 0; //Determine if we should offset more on X
-                    int removeHeight = currentDoor->facing == NORTH ? 1 : 0; //Same with Y
+                    if(currentDoor->facing == -currentRoomDoors[i].facing) 
+                    {
+                        int xPos = currentDoor->x - currentRoomDoors[i].x; //X position of the top left corner of the room //(room[0].size() - currentRoomDoors[i].x);
+                        int yPos = currentDoor->y - currentRoomDoors[i].y; //Y position of the top left corner //(room.size() - currentRoomDoors[i].y)
+                        
+                        /*copyRoomToMap(room, xPos, yPos, doorsToGenerate); //Copy it to the tileMap
+                        clearUsedDoor(doorsToGenerate);
+                        std::cout << xPos << " | " << yPos << " - " << printFacing(currentDoor->facing) << " = " << printFacing(currentRoomDoors[i].facing) << std::endl;
+                        return 0;*/
 
-                    int xPos = currentDoor->x - currentRoomDoors[i].x; //X position of the top left corner of the room //(room[0].size() - currentRoomDoors[i].x);
-                    int yPos = currentDoor->y - currentRoomDoors[i].y; //Y position of the top left corner //(room.size() - currentRoomDoors[i].y)
-
-                    if(checkIfItsClear(room, xPos, yPos)) { //If room has place to generate...
-                        copyRoomToMap(room, xPos, yPos, doorsToGenerate); //Copy it to the tileMap
-                        roomHasBeenAdded = true;
-                        break;
-                    } //Else, retry
+                        if(checkIfItsClear(room, xPos, yPos)) { //If room has place to generate...
+                            copyRoomToMap(room, xPos, yPos, doorsToGenerate); //Copy it to the tileMap
+                            roomHasBeenAdded = true;
+                            break;
+                        } //Else, retry
+                    }
                 }
             }
             clearUsedDoor(doorsToGenerate);
@@ -284,7 +322,7 @@ public:
                     if( i-1 < 0 || room[i-1][j].id == 0) allDoors[allDoors.size() - 1].facing = NORTH;
                     else if(i+1 >= room.size() || room[i+1][j].id == 0) allDoors[allDoors.size() - 1].facing = SOUTH;
                     else if(j-1 < 0 || room[i][j-1].id == 0) allDoors[allDoors.size() - 1].facing = WEST;
-                    else if(j+1 > room[i].size() || room[i][j+1].id == 0) allDoors[allDoors.size() - 1].facing = EAST;
+                    else if(j+1 >= room[i].size() || room[i][j+1].id == 0) allDoors[allDoors.size() - 1].facing = EAST;
                 }
             }
         }
@@ -338,6 +376,27 @@ public:
     int getRelativePos(double nbre){return nbre / tileSize;}
     int getSize(){return tileMap.size();}
     int getTileSize(){return tileSize;}
+
+    std::string printFacing(Direction d){
+        switch (d)
+        {
+        case WEST:
+            return "WEST";
+            break;
+        case EAST:
+            return "EAST";
+            break;
+        case NORTH:
+            return "NORTH";
+            break;
+        case SOUTH:
+            return "SOUTH";
+            break;
+        default:
+            break;
+        }
+        return "ERROR";
+    }
 
     /*void printM(TileMap m)
     {

@@ -12,7 +12,7 @@ public:
 
     void init() 
     {
-        speed = 10;
+        speed = 700;
         maxHP = 1;
         hp = maxHP;
         def = 1;

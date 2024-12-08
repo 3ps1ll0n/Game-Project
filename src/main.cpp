@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 
     std::cout << desck.bottom  << " | " << desck.right << std::endl;
 
-    game->init("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, desck.bottom, desck.right);
+    game->init("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, desck.right, desck.bottom);
 
     Uint32 fps = 1000/60;
 

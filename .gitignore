@@ -7,3 +7,4 @@ include/json/
 src/jsoncpp/
 *.md
 .vscode/settings.json
+assets.zip

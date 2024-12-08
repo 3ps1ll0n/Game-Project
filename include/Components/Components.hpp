@@ -4,3 +4,4 @@
 #include "StatsComponent.hpp"
 #include "TileMapComponent.hpp" 
 #include "HitBoxComponent.hpp"
+#include "AnimatorComponent.hpp"
