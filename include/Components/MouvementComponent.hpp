@@ -119,4 +119,6 @@ public:
         if(isDashing) return;
         velocity.reset();
     }
+
+    Vector2D getVelocity(){return velocity;};
 };

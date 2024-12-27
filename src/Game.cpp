@@ -41,13 +41,22 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height)
         player->addComponent<StatsComponent>();
         player->addComponent<AnimatorComponent>().addSpriteSheet("assets/CharAni-Sheet4.png", 
         {"Idle", "Walk"},
-        8,
-        0.100,
+        {4, 8},
+        {0.100, 0.100},
         32,
         32
         );
 
-        player->getComponent<AnimatorComponent>().setCurrentSpriteSheet("Idle");
+        player->getComponent<AnimatorComponent>().addConditions("Idle", [](){
+        return true;
+        });
+        player->getComponent<AnimatorComponent>().addConditions("Walk", [&](){
+            auto moveC = &player->getComponent<MouvementComponent>();
+            if(moveC->getVelocity().x != 0 || moveC->getVelocity().y != 0) return true;
+            return false;
+        });
+
+        player->getComponent<AnimatorComponent>().setCurrentSpriteSheet("Walk");
         
         auto& pHB = player->addComponent<HitBoxComponent>();
         pHB.addHitBoxType(BODY); //Add a kind of hitbox in the player
