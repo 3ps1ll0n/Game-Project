@@ -3,6 +3,7 @@
 #include "ECS.hpp"
 #include "Game.hpp"
 #include "HitBoxComponent.hpp"
+#include "Utilities.hpp"
 
 #include <memory>
 #include <vector>
@@ -49,6 +50,7 @@ private:
     TileMap tileMap;
     int tileSize =  64;
     int seed;
+    TextureContainer textures;
     //std::vector<Entity> tileEntity;
 public:
     TileMapComponent(/* args */) {}
@@ -57,6 +59,7 @@ public:
     void init()
     {
         tileMap = std::vector<std::vector<Tile>>(10, std::vector<Tile>(10, Tile()));
+        textures = TextureContainer();
         //tileEntity = {};
         seed = time(0);
         tileSize = 64;
@@ -87,12 +90,15 @@ public:
                 auto tile = &tileMap[i][j];
                 dstRect.x = (j * tileSize) - cam->getX();
 
-                if(tile->id == 4) SDL_SetRenderDrawColor(Game::renderer, 255, 0, 0 ,255);
+                /*if(tile->id == 4) SDL_SetRenderDrawColor(Game::renderer, 255, 0, 0 ,255);
                 else if (tile->id == 2) SDL_SetRenderDrawColor(Game::renderer, 210, 180, 140, 255);
                 else if (tile->id == 1) SDL_SetRenderDrawColor(Game::renderer, 210, 180, 0, 255);
                 else if (tile->id == 5) SDL_SetRenderDrawColor(Game::renderer, 0, 0, 255, 255);
                 else SDL_SetRenderDrawColor(Game::renderer, 0, 0, 0, 0);
-                if(tile->id != 0) SDL_RenderFillRect(Game::renderer, &dstRect);
+                if(tile->id != 0) SDL_RenderFillRect(Game::renderer, &dstRect);*/
+                if(tile->id != 0)
+                    SDL_RenderCopy(Game::renderer, textures.getTexture(tile->id - 1), NULL, &dstRect);
+
             }
         }
     }
@@ -187,9 +193,13 @@ public:
             Log::writeLog("debugLog.txt", roomPath + " - " + std::to_string(i) + "/" + std::to_string(nbreRoom) + " Generated");
         }
         for(int j = 0; j < doorsToGenerate.size(); j++) //Clear unused Doors
-           tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].id = 1;
+        {
+            tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].id = 1;
+            tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].canCollide = true;
+        }
 
         resizeAllDoors();
+        bridgeBetweenRooms();
     }
 
     TileMap getRoomFromJson(Json::Value root)
@@ -240,6 +250,8 @@ public:
                         int xPos = currentDoor->x - currentRoomDoors[i].x; //X position of the top left corner of the room //(room[0].size() - currentRoomDoors[i].x);
                         int yPos = currentDoor->y - currentRoomDoors[i].y; //Y position of the top left corner //(room.size() - currentRoomDoors[i].y)
                         
+                        if(abs(currentDoor->facing) == 1) yPos -= 2*(currentDoor->facing);
+                        else if(abs(currentDoor->facing) == 2) xPos += currentDoor->facing;
                         /*copyRoomToMap(room, xPos, yPos, doorsToGenerate); //Copy it to the tileMap
                         clearUsedDoor(doorsToGenerate);
                         std::cout << xPos << " | " << yPos << " - " << printFacing(currentDoor->facing) << " = " << printFacing(currentRoomDoors[i].facing) << std::endl;
@@ -355,16 +367,70 @@ public:
         }
     }
 
+    void bridgeBetweenRooms()
+    {
+        for(int i = 2; i < tileMap.size() - 2; i++)
+        {
+            for(int j = 2; j < tileMap[i].size() - 2; j++)
+            {
+                if(tileMap[i][j].id == 4)
+                {
+                    if(tileMap[i][j + 1].id == 0 && tileMap[i][j + 2].id == 4)
+                    {
+                        tileMap[i][j + 1].id = 2;
+                    }
+                    else if(tileMap[i][j - 1].id == 0 && tileMap[i][j - 2].id == 4)
+                    {
+                        tileMap[i][j - 1].id = 2;
+                    }
+                    else if(tileMap[i + 1][j].id == 0 && tileMap[i + 2][j].id == 4)
+                    {
+                        tileMap[i + 1][j].id = 2;
+                    }
+                    else if(tileMap[i - 1][j].id == 0 && tileMap[i - 2][j].id == 4)
+                    {
+                        tileMap[i - 1][j].id = 2;
+                    }
+                }
+            }
+        }
+
+        for(int i = 2; i < tileMap.size() - 2; i++)
+        {
+            for(int j = 2; j < tileMap[i].size() - 2; j++)
+            {
+                if(tileMap[i][j].id == 0)
+                {
+                    if(tileMap[i + 1][j].id == 1 && tileMap[i - 1][j].id == 1 && (tileMap[i][j + 1].id == 2 || tileMap[i][j - 1].id == 2 ))
+                    {
+                        tileMap[i][j].id = 1;
+                        tileMap[i][j].canCollide = true;
+                    }
+                    else if(tileMap[i][j + 1].id == 1 && tileMap[i][j - 1].id == 1 && (tileMap[i + 1][j].id == 2 || tileMap[i - 1][j].id == 2 ))
+                    {
+                        tileMap[i][j].id = 1;
+                        tileMap[i][j].canCollide = true;
+                    }
+                }
+            }
+        }
+    }
+
+    void assignProperID()
+    {
+        
+    }
+
     void clearUsedDoor(std::vector<Door>& allDoors)
     {
         for(int i = 0; i < allDoors.size(); i++)
         {
             int x = allDoors[i].x;
             int y = allDoors[i].y;
-            if( (x-1 < 0 || tileMap[y][x-1].id != 0) &&
-                (x+1 >= tileMap[0].size() || tileMap[y][x+1].id != 0) &&
-                (y-1 < 0 || tileMap[y-1][x].id != 0) &&
-                (y+1 >= tileMap.size() || tileMap[y+1][x].id != 0)
+            if( (x-2 < 0 || tileMap[y][x-2].id != 0) &&
+                (x+2 >= tileMap[0].size() || tileMap[y][x+2].id != 0) &&
+                (y-2 < 0 || tileMap[y-2][x].id != 0) &&
+                (y+2 >= tileMap.size() || tileMap[y+2][x].id != 0)
             ) 
             {
                 allDoors.erase(allDoors.begin() + i);

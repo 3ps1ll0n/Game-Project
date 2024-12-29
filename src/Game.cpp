@@ -72,6 +72,8 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height)
         loadSound("assets/Sounds/Effect");
         loadMusic("assets/Sounds/Music/Battlefield Symphony.mp3");
         playMusic();
+
+        std::cout << sizeof(Entity) << std::endl;
     }
     else
     {

@@ -43,4 +43,9 @@ public:
         this->sprite = sprite;
     }
 
+    SDL_Texture* getSprite()
+    {
+        return sprite;
+    }
+
 };
