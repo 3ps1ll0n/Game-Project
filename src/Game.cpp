@@ -6,7 +6,7 @@
 #include <iostream>
 
 SDL_Renderer* Game::renderer = nullptr;
-bool Game::debugMode = true;
+bool Game::debugMode = false;
 Entity* Game::tileMap = nullptr;
 
 Game::Game(){}
@@ -137,7 +137,7 @@ void Game::update(double dt)
 
 void Game::render()
 {
-    SDL_SetRenderDrawColor(renderer, 100, 27, 124, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     entityManager->render(cam);
     player->render(cam);

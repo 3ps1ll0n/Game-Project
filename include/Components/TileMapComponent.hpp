@@ -82,7 +82,7 @@ public:
     void render(Camera* cam)
     {
         SDL_Rect dstRect = {0, 0, tileSize, tileSize};
-        for(int i = cam->getY() / tileSize; i < (cam->getY() + cam->getH()) / tileSize; i++)
+        for(int i = cam->getY() / tileSize; i <= (cam->getY() + cam->getH()) / tileSize; i++)
         {
             dstRect.y = (i * tileSize) - cam->getY();
             for(int j = cam->getX() / tileSize; j < (cam->getX() + cam->getW()) / tileSize + 1; j++)
@@ -192,14 +192,15 @@ public:
             }
             Log::writeLog("debugLog.txt", roomPath + " - " + std::to_string(i) + "/" + std::to_string(nbreRoom) + " Generated");
         }
-        for(int j = 0; j < doorsToGenerate.size(); j++) //Clear unused Doors
+        /*for(int j = 0; j < doorsToGenerate.size(); j++) //Clear unused Doors
         {
             tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].id = 1;
             tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].canCollide = true;
-        }
+        }*/
 
         resizeAllDoors();
         bridgeBetweenRooms();
+        assignProperID();
     }
 
     TileMap getRoomFromJson(Json::Value root)
@@ -312,9 +313,9 @@ public:
 
     bool checkIfItsClear (TileMap& room, int x, int y)
     {
-        for(int i = 1; i < room.size() - 1; i++)
+        for(int i = 0; i < room.size(); i++)
         {
-            for(int j = 1; j < room[i].size() - 1; j++)
+            for(int j = 0; j < room[i].size(); j++)
             {
                 if(tileMap[i + y][j + x].id != 0 && room[i][j].id != 0) return false;
             }
@@ -418,7 +419,82 @@ public:
 
     void assignProperID()
     {
-        
+        TileMap nTM = {};
+
+        for(int i = 0; i < tileMap.size(); i++)
+        {
+            nTM.push_back({});
+            for(int j = 0; j < tileMap[i].size(); j++)
+            {
+                Tile tile = Tile();
+                tile.id = 0;
+                if(tileMap[i][j].id != 0)
+                {
+                    switch (tileMap[i][j].id)
+                    {
+                    case 1:
+                        tile.id = 1;
+
+                        if(i > 0 && i < tileMap.size() && tileMap[i+1][j].id == 1 && tileMap[i-1][j].id == 1)
+                        { //if its a straigt vertical wall
+                            if(j < tileMap[i].size() && tileMap[i][j+1].id != 0) tile.id = 17;
+                            else tile.id = 20;
+                        }
+
+                        else if( j > 0 && j < tileMap[i].size() && tileMap[i][j+1].id == 1 && tileMap[i][j-1].id == 1)
+                        { //if its a straigt horizontal wall
+                            if(i < tileMap.size() && tileMap[i + 1][j].id != 0) tile.id = 4;
+                            else tile.id = 36;
+                        }
+
+                        else if(i < tileMap.size() && j < tileMap[i].size() && tileMap[i][j+1].id == 1 && tileMap[i + 1][j].id == 1)
+                        { //if down and right wall
+                            if((i == 0 || tileMap[i - 1][j].id == 0) || (j == 0 || tileMap[i][j-1].id == 0)) tile.id = 1;
+                            else tile.id = 9;
+                        }
+
+                        else if(i > 0 && j > 0 && tileMap[i][j-1].id == 1 && tileMap[i-1][j].id == 1)
+                        { //if up and left wall
+                            if((i == 0 || tileMap[i + 1][j].id == 0) || (j == 0 || tileMap[i][j+1].id == 0)) tile.id = 8;
+                            else tile.id = 41;
+                        }
+
+                        else if(i < tileMap.size() && j > 0 && tileMap[i][j-1].id == 1 && tileMap[i+1][j].id == 1)
+                        { //if down and left wall
+                            if((i == 0 || tileMap[i - 1][j].id == 0) || (j == tileMap[i].size() || tileMap[i][j+1].id == 0)) tile.id = 7;
+                            else tile.id = 12;
+                        }
+
+                        else if(i > 0 && j < tileMap[i].size() && tileMap[i][j+1].id == 1 && tileMap[i-1][j].id == 1)
+                        { //if up and right
+                            if((i == tileMap.size() || tileMap[i + 1][j].id == 0) || (j == 0 || tileMap[i][j-1].id == 0)) tile.id = 33;
+                            else tile.id = 25;
+                        }
+
+                        tile.canCollide = true;
+                        break;
+                    case 2:
+                    case 4:
+                        if((i+j)%2 == 0) tile.id = 56;
+                        else tile.id = 72;
+                        break;
+                    //case 4:
+                    //    tile.id = 85;
+                    //    break;
+                    case 5:
+                        tile.id = 30;
+                        tile.canCollide = true;
+                        break;
+                    default:
+                        break;
+                    }
+                }
+
+                nTM[i].push_back(tile);
+            }
+        }
+
+        tileMap = nTM;
     }
 
     void clearUsedDoor(std::vector<Door>& allDoors)
