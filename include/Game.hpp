@@ -14,7 +14,7 @@ private:
 
     bool running;
 
-    Manager* entityManager;
+
     Entity* player;
     Camera* cam;
 public:
@@ -31,5 +31,6 @@ public:
     static SDL_Renderer* renderer;
     static bool debugMode;
     static Entity* tileMap;
+    static Manager* entityManager;
 };
 

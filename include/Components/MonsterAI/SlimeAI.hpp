@@ -9,4 +9,7 @@ private:
 public:
     SlimeAI(/* args */);
     ~SlimeAI();
+    void init();
+    void render();
+    void update();
 };

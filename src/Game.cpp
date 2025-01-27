@@ -2,12 +2,14 @@
 #include "ECS.hpp"
 #include "Components.hpp"
 #include "SoundEngine.hpp"
+#include "Monster.hpp"
 
 #include <iostream>
 
 SDL_Renderer* Game::renderer = nullptr;
 bool Game::debugMode = false;
 Entity* Game::tileMap = nullptr;
+Manager* Game::entityManager = new Manager();
 
 Game::Game(){}
 
@@ -68,6 +70,8 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height)
         tmc.Generate(500, 50);
 
         player->getComponent<PositionComponent>().setPos(tmc.getSize()/2 * tmc.getTileSize(), tmc.getSize()/2 * tmc.getTileSize());
+        
+        CreateMonster::Slime(tmc.getSize()/2 * tmc.getTileSize(), tmc.getSize()/2 * tmc.getTileSize());
 
         loadSound("assets/Sounds/Effect");
         loadMusic("assets/Sounds/Music/Battlefield Symphony.mp3");

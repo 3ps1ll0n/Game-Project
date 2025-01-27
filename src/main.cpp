@@ -2,7 +2,7 @@
 #include <iostream>
 #include <wtypes.h>
 
-//g++ src/*.cpp src/jsoncpp/*.cpp src/Monster/*.cpp -o bin/prog -I include -I include/Components -I include/Monster -I include/SDL2 -L lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer
+// g++ src/*.cpp src/jsoncpp/*.cpp -o bin/prog -I include -I include/Components -I include/SDL2 -L lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer
 
 int main(int argc, char *argv[])
 {
