@@ -14,7 +14,6 @@ private:
 
     bool running;
 
-
     Entity* player;
     Camera* cam;
 public:

@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <iterator>
 
-std::string path("assets/TileMap/");
+static std::string path("assets/TileMap/");
 
 struct Tile
 {

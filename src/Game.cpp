@@ -2,14 +2,14 @@
 #include "ECS.hpp"
 #include "Components.hpp"
 #include "SoundEngine.hpp"
-#include "Monster.hpp"
+#include "CreateMonster.hpp"
 
 #include <iostream>
 
 SDL_Renderer* Game::renderer = nullptr;
 bool Game::debugMode = false;
 Entity* Game::tileMap = nullptr;
-Manager* Game::entityManager = new Manager();
+Manager* Game::entityManager = nullptr;
 
 Game::Game(){}
 
@@ -76,8 +76,6 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height)
         loadSound("assets/Sounds/Effect");
         loadMusic("assets/Sounds/Music/Battlefield Symphony.mp3");
         playMusic();
-
-        std::cout << sizeof(Entity) << std::endl;
     }
     else
     {

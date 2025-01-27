@@ -1,3 +1,5 @@
+#pragma once
+
 #include "PositionComponent.hpp"
 #include "SpriteRendererComponent.hpp"
 #include "MouvementComponent.hpp"

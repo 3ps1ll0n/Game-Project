@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ECS.hpp"
 #include "Components.hpp"
 
