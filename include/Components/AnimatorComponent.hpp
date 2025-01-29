@@ -155,6 +155,22 @@ public:
         SDL_SetRenderTarget(Game::renderer, NULL);
     }
 
+    void loadFolder(std::string folderLocation)
+    {
+        for(const auto& entry : std::filesystem::directory_iterator(folderLocation)) //Find all Tile Map file
+        {
+            auto pathStr = entry.path().string();
+            SDL_Texture* spriteSheet = TextureManager::loadTexture(entry.path().string().c_str());
+            std::string sheetName = pathStr.substr(pathStr.find_last_of("/") + 1, (pathStr.find_last_of(".") - 1) - pathStr.find_last_of("/"));
+            std::cout << sheetName << std::endl;
+
+            int w, h;
+            SDL_QueryTexture(spriteSheet, NULL, NULL, &w, &h);
+
+            spriteSheets.insert({sheetName, SpriteSheet(spriteSheet, w/h, 0.100)});
+        }
+    }
+
     void addConditions(std::string sheetName, std::function<bool()> condition)
     {
         if(spriteSheets.find(sheetName) != spriteSheets.end()) conditions.push_back({condition, sheetName});

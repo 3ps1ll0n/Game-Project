@@ -192,11 +192,11 @@ public:
             }
             Log::writeLog("debugLog.txt", roomPath + " - " + std::to_string(i) + "/" + std::to_string(nbreRoom) + " Generated");
         }
-        /*for(int j = 0; j < doorsToGenerate.size(); j++) //Clear unused Doors
+        for(int j = 0; j < doorsToGenerate.size(); j++) //Clear unused Doors
         {
             tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].id = 1;
             tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].canCollide = true;
-        }*/
+        }
 
         resizeAllDoors();
         bridgeBetweenRooms();

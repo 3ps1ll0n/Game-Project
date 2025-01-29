@@ -7,3 +7,5 @@
 #include "TileMapComponent.hpp" 
 #include "HitBoxComponent.hpp"
 #include "AnimatorComponent.hpp"
+
+#include "MonsterAI/SlimeAI.hpp"

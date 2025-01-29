@@ -11,6 +11,8 @@ Entity* CreateMonster::Slime(int xPos = 0, int yPos = 0)
     slime->addComponent<HitBoxComponent>();
     slime->addComponent<SpriteRendererComponent>().setSprite("assets/Blob.png");
     slime->getComponent<PositionComponent>().setPos(xPos, yPos);
+    slime->addComponent<AnimatorComponent>().loadFolder("assets/EntitySprite/Slime/");
+    slime->getComponent<AnimatorComponent>().setCurrentSpriteSheet("Idle");    //slime->addComponent<SlimeAI>();
     
     return slime;
 }
