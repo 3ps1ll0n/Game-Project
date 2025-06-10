@@ -2,8 +2,7 @@
 
 #include "SDL.h"
 #include <math.h>
-#include <iostream>
-#include "SpriteRendererComponent.hpp"
+#include "ECS.hpp"
 #include "TextureManager.hpp"
 
 struct Vector2D{
@@ -40,75 +39,29 @@ struct Vector2D{
     }
 };
 
-class Texture : public Entity 
-{
-public:
-    Texture()
-    {
-        addComponent<SpriteRendererComponent>();
-    }
-    Texture(SDL_Texture* tex)
-    {
-        addComponent<SpriteRendererComponent>();
-        getComponent<SpriteRendererComponent>().setSprite(tex);
-    }
+struct Point{
+    int x = 0;
+    int y = 0;
+    Point(int x, int y)
+    :x(x), y(y) {}
 
-    void setTexture(SDL_Texture* tex)
+    Point operator *=(int m)
     {
-        getComponent<SpriteRendererComponent>().setSprite(tex);
+        x*= m;
+        y *= m;
+        return *this;
     }
 
-    SDL_Texture* getTexture()
+    Point operator +=(int add)
     {
-        return getComponent<SpriteRendererComponent>().getSprite();
-    }
-};
-
-class TextureContainer
-{
-private:
-    std::vector<Texture> textures;
-public:
-    TextureContainer()
-    {
-        auto tileSheet = TextureManager::loadTexture("assets/tileSheet.png");
-        int w, h;
-        SDL_QueryTexture(tileSheet, NULL, NULL, &w, &h);
-
-        SDL_Rect srcRect = {0, 0, 32, 32};
-
-        for(int i = 0; i < h/srcRect.h; i++)
-        {
-            srcRect.y = i*srcRect.h;
-            for(int j = 0; j < w/srcRect.w; j++)
-            {
-                srcRect.x = j*srcRect.w;
-
-                SDL_Texture* tex = SDL_CreateTexture(Game::renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, srcRect.w, srcRect.h);
-
-                SDL_SetRenderTarget(Game::renderer, tex);
-
-                SDL_SetRenderDrawBlendMode(Game::renderer, SDL_BLENDMODE_BLEND);
-                SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
-                SDL_SetRenderDrawColor(Game::renderer, 0, 0, 0, 0);
-                SDL_RenderClear(Game::renderer);
-
-                SDL_RenderCopy(Game::renderer, tileSheet, &srcRect, NULL);
-
-                textures.push_back(Texture(tex));
-            }
-        }
-        SDL_SetRenderTarget(Game::renderer, NULL);
-    }
-
-    SDL_Texture* getTexture(int index)
-    {
-        return textures[index].getTexture();
+        x += add;
+        y += add;
+        return *this;
     }
 };
 
 struct Cooldown{
-    double dt;
+    double dt = 0;;
     double cooldown;
 
     void update(double dt)
@@ -116,7 +69,7 @@ struct Cooldown{
         this->dt += dt;
     }
 
-    bool canExecute()
+    bool execute()
     {
         if(dt >= cooldown) 
         {
@@ -125,4 +78,51 @@ struct Cooldown{
         }
         return false;
     }
+
+    bool canExecute()
+    {
+        if(dt >= cooldown) 
+        {
+            return true;
+        }
+        return false;
+    }
 };
+
+inline void DrawCircle(SDL_Renderer* renderer, int32_t centreX, int32_t centreY, int32_t radius)
+{
+    const int32_t diameter = (radius * 2);
+
+    int32_t x = (radius - 1);
+    int32_t y = 0;
+    int32_t tx = 1;
+    int32_t ty = 1;
+    int32_t error = (tx - diameter);
+
+    while (x >= y)
+    {
+        // Each of the following renders an octant of the circle
+        SDL_RenderDrawPoint(renderer, centreX + x, centreY - y);
+        SDL_RenderDrawPoint(renderer, centreX + x, centreY + y);
+        SDL_RenderDrawPoint(renderer, centreX - x, centreY - y);
+        SDL_RenderDrawPoint(renderer, centreX - x, centreY + y);
+        SDL_RenderDrawPoint(renderer, centreX + y, centreY - x);
+        SDL_RenderDrawPoint(renderer, centreX + y, centreY + x);
+        SDL_RenderDrawPoint(renderer, centreX - y, centreY - x);
+        SDL_RenderDrawPoint(renderer, centreX - y, centreY + x);
+
+        if (error <= 0)
+        {
+            ++y;
+            error += ty;
+            ty += 2;
+        }
+
+        if (error > 0)
+        {
+            --x;
+            tx += 2;
+            error += (tx - diameter);
+        }
+    }
+}

@@ -40,10 +40,14 @@ public:
     void update(double dt)
     {
         frameTime.update(dt);
-        if(frameTime.canExecute())
+        if(frameTime.execute())
         {
             src_Rect.x += wFrame;
-            if(src_Rect.x >= wSpriteSheet) src_Rect.x = 0;
+            currentFrame++;
+            if(src_Rect.x >= wSpriteSheet){
+                src_Rect.x = 0;
+                currentFrame = 0;
+            }
         }
     }
 
@@ -52,6 +56,16 @@ public:
     SDL_Rect* passParameter()
     {
         return &src_Rect;
+    }
+
+    void setPlayTime(double time)
+    {
+        frameTime.cooldown = time / nFrame;
+    }
+
+    int getCurrentFrameIndex()
+    {
+        return currentFrame;
     }
 };
 
@@ -85,14 +99,14 @@ public:
         }
         currentSpriteSheet->update(dt);
     }
-    void render() {}
+    void render(SDL_Renderer* renderer, Camera* cam) {}
 
     void addSpriteSheet(const char* sheetLocation, std::string sheetName, int nFrame, double timeBetweenFrame)
     {
         spriteSheets.insert({sheetName, SpriteSheet(TextureManager::loadTexture(sheetLocation), nFrame, timeBetweenFrame)});
     }
 
-    void addSpriteSheet(const char* sheetLocation, std::vector<std::string> sheetNames, int nFramePerLine, double timeBetweenFrame, int h = -1, int w = -1)
+    void addSpriteSheet(SDL_Renderer* renderer, const char* sheetLocation, std::vector<std::string> sheetNames, int nFramePerLine, double timeBetweenFrame, int h = -1, int w = -1)
     {
         SDL_Texture* texture = TextureManager::loadTexture(sheetLocation);
 
@@ -107,23 +121,23 @@ public:
 
         for (int i = 0; i < sheetNames.size(); i++)
         {   
-            SDL_Texture* nText = SDL_CreateTexture(Game::renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
-            SDL_SetRenderTarget(Game::renderer, nText);
+            SDL_Texture* nText = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
+            SDL_SetRenderTarget(renderer, nText);
 
-            SDL_SetRenderDrawBlendMode(Game::renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             SDL_SetTextureBlendMode(nText, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawColor(Game::renderer, 0, 0, 0, 0);
-            SDL_RenderClear(Game::renderer);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+            SDL_RenderClear(renderer);
 
             SDL_Rect src_rect = {0, h * i, w, h};
-            SDL_RenderCopy(Game::renderer, texture, &src_rect, NULL);
+            SDL_RenderCopy(renderer, texture, &src_rect, NULL);
 
             spriteSheets.insert({sheetNames[i], SpriteSheet(nText, nFramePerLine, timeBetweenFrame)});
         }
-        SDL_SetRenderTarget(Game::renderer, NULL);
+        SDL_SetRenderTarget(renderer, NULL);
     }
 
-    void addSpriteSheet(const char* sheetLocation, std::vector<std::string> sheetNames, std::vector<int> nFramePerLines, std::vector<double> timeBetweenFrames, int hFrame = -1, int wFrame = -1)
+    void addSpriteSheet(SDL_Renderer* renderer, const char* sheetLocation, std::vector<std::string> sheetNames, std::vector<int> nFramePerLines, std::vector<double> timeBetweenFrames, int hFrame = -1, int wFrame = -1)
     {
         if(sheetNames.size() != nFramePerLines.size() || sheetNames.size() != timeBetweenFrames.size()) return;
 
@@ -139,20 +153,20 @@ public:
             {
                 SDL_QueryTexture(texture, NULL, NULL, &wFrame, NULL);
             }
-            SDL_Texture* nText = SDL_CreateTexture(Game::renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, wFrame * nFramePerLines[i], hFrame);
-            SDL_SetRenderTarget(Game::renderer, nText);
+            SDL_Texture* nText = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, wFrame * nFramePerLines[i], hFrame);
+            SDL_SetRenderTarget(renderer, nText);
 
-            SDL_SetRenderDrawBlendMode(Game::renderer, SDL_BLENDMODE_BLEND);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             SDL_SetTextureBlendMode(nText, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawColor(Game::renderer, 0, 0, 0, 0);
-            SDL_RenderClear(Game::renderer);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+            SDL_RenderClear(renderer);
 
             SDL_Rect src_rect = {0, hFrame * i, wFrame * nFramePerLines[i], hFrame};
-            SDL_RenderCopy(Game::renderer, texture, &src_rect, NULL);
+            SDL_RenderCopy(renderer, texture, &src_rect, NULL);
 
             spriteSheets.insert({sheetNames[i], SpriteSheet(nText, nFramePerLines[i], timeBetweenFrames[i])});
         }
-        SDL_SetRenderTarget(Game::renderer, NULL);
+        SDL_SetRenderTarget(renderer, NULL);
     }
 
     void loadFolder(std::string folderLocation)
@@ -162,11 +176,10 @@ public:
             auto pathStr = entry.path().string();
             SDL_Texture* spriteSheet = TextureManager::loadTexture(entry.path().string().c_str());
             std::string sheetName = pathStr.substr(pathStr.find_last_of("/") + 1, (pathStr.find_last_of(".") - 1) - pathStr.find_last_of("/"));
-            std::cout << sheetName << std::endl;
 
             int w, h;
             SDL_QueryTexture(spriteSheet, NULL, NULL, &w, &h);
-
+            std::cout << sheetName  << " : " << w/h << std::endl;
             spriteSheets.insert({sheetName, SpriteSheet(spriteSheet, w/h, 0.100)});
         }
     }
@@ -181,5 +194,15 @@ public:
         currentSpriteSheet = &spriteSheets.find(sheetName)->second;
         sprite->setSprite(currentSpriteSheet->getTexture());
         sprite->setRenderParameters(currentSpriteSheet->passParameter());
+    }
+
+    void playAnimationIn(std::string sheetName, double time)
+    {
+        spriteSheets.find(sheetName)->second.setPlayTime(time);
+    }
+
+    int getCurrentFrameIndex()
+    {
+        return currentSpriteSheet->getCurrentFrameIndex();
     }
 };

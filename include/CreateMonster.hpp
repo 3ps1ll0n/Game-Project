@@ -6,5 +6,5 @@
 class CreateMonster
 {
 public:
-    static Entity* Slime(int xPos, int yPos);
+    static Entity* Slime(Manager* entityManager, Entity* tileMap, int xPos, int yPos);
 };

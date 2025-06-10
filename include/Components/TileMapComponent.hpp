@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ECS.hpp"
-#include "Game.hpp"
 #include "HitBoxComponent.hpp"
 #include "Utilities.hpp"
+#include "Texture.hpp"
 
 #include <memory>
 #include <vector>
@@ -79,7 +79,7 @@ public:
 
     void update(double dt){}
 
-    void render(Camera* cam)
+    void render(SDL_Renderer* renderer, Camera* cam)
     {
         SDL_Rect dstRect = {0, 0, tileSize, tileSize};
         for(int i = cam->getY() / tileSize; i <= (cam->getY() + cam->getH()) / tileSize; i++)
@@ -97,7 +97,7 @@ public:
                 else SDL_SetRenderDrawColor(Game::renderer, 0, 0, 0, 0);
                 if(tile->id != 0) SDL_RenderFillRect(Game::renderer, &dstRect);*/
                 if(tile->id != 0)
-                    SDL_RenderCopy(Game::renderer, textures.getTexture(tile->id - 1), NULL, &dstRect);
+                    SDL_RenderCopy(renderer, textures.getTexture(tile->id - 1), NULL, &dstRect);
 
             }
         }
@@ -115,14 +115,14 @@ public:
     {
         if(!e->hasComponent<HitBoxComponent>()) return false;
 
-        std::vector<HitBox*> entityHitboxes = e->getComponent<HitBoxComponent>().getHitBoxes(BODY);
+        std::vector<HitBox> entityHitboxes = e->getComponent<HitBoxComponent>().getHitBoxes();
 
-        for(auto hb : entityHitboxes)
+        for(HitBox& hb : entityHitboxes)
         {
-            int leftTile = hb->x / tileSize;
-            int rightTile = (hb->x + hb->w) / tileSize;
-            int topTile = hb->y / tileSize;
-            int bottomTile = (hb->y + hb->h) / tileSize;
+            int leftTile = hb.x / tileSize;
+            int rightTile = (hb.x + hb.w) / tileSize;
+            int topTile = hb.y / tileSize;
+            int bottomTile = (hb.y + hb.h) / tileSize;
 
             for(int i = leftTile; i <= rightTile; i++)
             {
@@ -183,7 +183,7 @@ public:
             roomFile >> root;
             //Json::Value to TileMap
             room = getRoomFromJson(root);
-            if(addRoomToDungeon(room, doorsToGenerate) == 1 && Game::debugMode) 
+            if(addRoomToDungeon(room, doorsToGenerate) == 1 && Parameters::DebbugMod) 
             {
                 for(int j = 0; j < doorsToGenerate.size(); j++)
                     tileMap[doorsToGenerate[j].y][doorsToGenerate[j].x].id = 0;
@@ -518,6 +518,10 @@ public:
     int getRelativePos(double nbre){return nbre / tileSize;}
     int getSize(){return tileMap.size();}
     int getTileSize(){return tileSize;}
+    Tile* getTiles(int xIndex, int yIndex)
+    {
+        return &tileMap[yIndex][xIndex];
+    }
 
     std::string printFacing(Direction d){
         switch (d)

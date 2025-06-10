@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ECS.hpp"
-#include "Game.hpp"
 #include "TextureManager.hpp"
 #include "PositionComponent.hpp"
 
@@ -22,10 +21,10 @@ public:
         src_Rect = nullptr;
     }
     void update(){};
-    void render(Camera* cam)
+    void render(SDL_Renderer* renderer, Camera* cam)
     {
         SDL_Rect dst_Rect {(int)entity->getComponent<PositionComponent>().getX() - cam->getX(), (int)entity->getComponent<PositionComponent>().getY() - cam->getY(), 64, 64};
-        SDL_RenderCopy(Game::renderer, sprite, src_Rect, &dst_Rect);
+        SDL_RenderCopy(renderer, sprite, src_Rect, &dst_Rect);
     }
 
     void setSprite(const char* filename)

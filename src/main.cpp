@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
         game->update(dt);
         game->render();
 
-        
         frameTime = SDL_GetTicks() - start;
 
         if(frameTime < fps) {

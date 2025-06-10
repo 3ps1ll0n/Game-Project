@@ -8,6 +8,7 @@
 
 #include "Log.hpp"
 #include "Camera.hpp"
+#include "SDL.h"
 
 using ComponentID = int;
 
@@ -35,7 +36,7 @@ public:
 
     virtual void init() {};
     virtual void update(double dt) {};
-    virtual void render(Camera* cam) {};
+    virtual void render(SDL_Renderer* renderer, Camera* cam) {};
 
     virtual ~Component() {};
 };
@@ -54,9 +55,9 @@ public:
         for(auto& c : components) c->update(dt);
     };
 
-    void render(Camera* cam)
+    void render(SDL_Renderer* renderer, Camera* cam)
     {
-       for(auto& c : components) c->render(cam); 
+       for(auto& c : components) c->render(renderer, cam); 
     };
 
     bool isActive() {return active;}
@@ -98,9 +99,9 @@ public:
     {
         for(auto& e : entities) e->update(dt);
     }
-    void render(Camera* cam)
+    void render(SDL_Renderer* renderer, Camera* cam)
     {
-        for(auto& e : entities) e->render(cam);
+        for(auto& e : entities) e->render(renderer, cam);
     }
 
     void refresh()

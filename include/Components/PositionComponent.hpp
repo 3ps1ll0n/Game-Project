@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ECS.hpp"
+#include "SDL.h"
 
 class PositionComponent : public Component
 {
@@ -16,7 +17,7 @@ public:
         y = 0;
     }
     void update(double dt){};
-    void render(Camera* cam){};
+    void render(SDL_Renderer* renderer, Camera* cam){};
 
     void setPos(double xPos, double yPos)
     {

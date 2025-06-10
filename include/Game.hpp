@@ -1,9 +1,11 @@
-#pragma once
+#ifndef GAME_H
+#define GAME_H
 
 #include <SDL.h>
 #include "Camera.hpp"
 #include "Log.hpp"
 #include "ECS.hpp"
+#include "HitBoxesManager.hpp"
 
 class Game
 {
@@ -14,7 +16,7 @@ private:
 
     bool running;
 
-    Entity* player;
+    static Entity* player;
     Camera* cam;
 public:
     Game(/* args */);
@@ -27,9 +29,13 @@ public:
     void clear();
     bool isRunning(){return running;};
 
+    static Entity* getPlayer(){return player;}
+
     static SDL_Renderer* renderer;
     static bool debugMode;
     static Entity* tileMap;
     static Manager* entityManager;
+    static HitBoxesManager* hitBoxesManager;
 };
 
+#endif

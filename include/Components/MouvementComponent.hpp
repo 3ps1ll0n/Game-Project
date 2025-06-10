@@ -5,8 +5,10 @@
 #include "StatsComponent.hpp"
 #include "HitBoxComponent.hpp"
 #include "TileMapComponent.hpp"
+#include "StatsComponent.hpp"
 #include "SoundEngine.hpp"
 #include "Utilities.hpp"
+#include "Parameters.hpp"
 
 #include <iostream>
 
@@ -20,6 +22,7 @@ private:
     bool isDashing;
     Cooldown canDash;
     Cooldown dashing;
+    StatsComponent* stats;
     Sound* stepSound;
 
     static const int steps = 6;
@@ -31,9 +34,12 @@ public:
     {
         velocity.x = 0;
         velocity.y = 0;
+        oldPosition.x = 0;
+        oldPosition.y = 0;
         isDashing = false;
         canDash = {1.0, 0.75};
         dashing = {0, 0.2};
+        stats = &entity->getComponent<StatsComponent>();
         stepSound = new Sound(0.2, [&]()
         {
             if((int)velocity.x == 0 && (int)velocity.y == 0) return false;
@@ -68,12 +74,12 @@ public:
             entity->getComponent<HitBoxComponent>().update(dt);
         }
 
-        stepSound->play("step");
+        //stepSound->play("step");
         stepSound->update(dt);
         canDash.update(dt);
         dashing.update(dt);
 
-        if(isDashing && dashing.canExecute()){
+        if(isDashing && dashing.execute()){
             velocity.reset();
             isDashing = false;
         }
@@ -82,7 +88,7 @@ public:
 
     void dash()
     {
-        if(canDash.canExecute()){
+        if(canDash.execute()){
             isDashing = true;
             dashing.dt = 0;
             velocity.x *= 1.75;
@@ -90,13 +96,13 @@ public:
         }
     }
 
-    void render(Camera* cam)
+    void render(SDL_Renderer* renderer, Camera* cam)
     {
-        if(Game::debugMode)
+        if(Parameters::DebbugMod)
         {
             PositionComponent* pos = &entity->getComponent<PositionComponent>();
             //SpriteComponent* sprite = &entity->getComponent<SpriteComponent>();
-            velocity.diplay(Game::renderer, pos->getX() + 30 - cam->getX(), pos->getY() + 30 - cam->getY(), 0.05, {255, 0 ,255, 0});
+            velocity.diplay(renderer, pos->getX() + 30 - cam->getX(), pos->getY() + 30 - cam->getY(), 0.05, {255, 0 ,255, 0});
         }
     };
 
@@ -120,5 +126,6 @@ public:
         velocity.reset();
     }
 
-    Vector2D getVelocity(){return velocity;};
+    Vector2D* getVelocity(){return &velocity;};
+    Vector2D* getOldPos(){return &oldPosition;};
 };

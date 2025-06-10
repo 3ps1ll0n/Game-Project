@@ -1,15 +1,18 @@
 #include "Game.hpp"
 #include "ECS.hpp"
-#include "Components.hpp"
 #include "SoundEngine.hpp"
 #include "CreateMonster.hpp"
+#include "Components.hpp"
+#include "Parameters.hpp"
 
 #include <iostream>
 
 SDL_Renderer* Game::renderer = nullptr;
-bool Game::debugMode = false;
+bool Game::debugMode = true;
 Entity* Game::tileMap = nullptr;
 Manager* Game::entityManager = nullptr;
+Entity* Game::player = nullptr;
+HitBoxesManager* Game::hitBoxesManager = nullptr;
 
 Game::Game(){}
 
@@ -35,13 +38,16 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height)
         entityManager = new Manager();
         cam = new Camera();
         cam->setSize(width, height);
+        hitBoxesManager = new HitBoxesManager();
         running = true;
+        Parameters::DebbugMod = true;
 
         player->addComponent<MouvementComponent>();
         player->addComponent<PositionComponent>();
         player->addComponent<SpriteRendererComponent>().setSprite("assets/chevalier_002.png");
         player->addComponent<StatsComponent>();
-        player->addComponent<AnimatorComponent>().addSpriteSheet("assets/CharAni-Sheet4.png", 
+        player->addComponent<AnimatorComponent>().addSpriteSheet(renderer,
+        "assets/CharAni-Sheet4.png", 
         {"Idle", "Walk"},
         {4, 8},
         {0.100, 0.100},
@@ -54,15 +60,14 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height)
         });
         player->getComponent<AnimatorComponent>().addConditions("Walk", [&](){
             auto moveC = &player->getComponent<MouvementComponent>();
-            if(moveC->getVelocity().x != 0 || moveC->getVelocity().y != 0) return true;
+            if(moveC->getVelocity()->x != 0 || moveC->getVelocity()->y != 0) return true;
             return false;
         });
 
         player->getComponent<AnimatorComponent>().setCurrentSpriteSheet("Walk");
         
         auto& pHB = player->addComponent<HitBoxComponent>();
-        pHB.addHitBoxType(BODY); //Add a kind of hitbox in the player
-        pHB.addHitBox(BODY, new HitBox(0, 0, 60, 60));
+        pHB.addHitBox(HitBox(0, 0, 60, 60));
 
 
         tileMap = &entityManager->addEntity();
@@ -71,7 +76,8 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height)
 
         player->getComponent<PositionComponent>().setPos(tmc.getSize()/2 * tmc.getTileSize(), tmc.getSize()/2 * tmc.getTileSize());
         
-        CreateMonster::Slime(tmc.getSize()/2 * tmc.getTileSize(), tmc.getSize()/2 * tmc.getTileSize());
+        auto slime = CreateMonster::Slime(entityManager, tileMap, tmc.getSize()/2 * tmc.getTileSize(), tmc.getSize()/2 * tmc.getTileSize());
+        slime->getComponent<SlimeAI>().setTarget(player);
 
         loadSound("assets/Sounds/Effect");
         loadMusic("assets/Sounds/Music/Battlefield Symphony.mp3");
@@ -132,7 +138,13 @@ void Game::update(double dt)
     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
     player->update(dt);
     cam->setPos(player->getComponent<PositionComponent>().getX() - (windowWidth/2), player->getComponent<PositionComponent>().getY() - (windowHeight/2));
+    hitBoxesManager->update(dt);
     entityManager->update(dt);
+
+    if(hitBoxesManager->detectCollision(player))
+    {
+        player->getComponent<StatsComponent>().dealDamage(5);
+    }
     //player->getComponent<MouvementComponent>().resetVelocity();
     //playSound();
 }
@@ -141,8 +153,9 @@ void Game::render()
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    entityManager->render(cam);
-    player->render(cam);
+    entityManager->render(renderer, cam);
+    hitBoxesManager->render(renderer, cam);
+    player->render(renderer, cam);
     SDL_RenderPresent(renderer);
 }
 
